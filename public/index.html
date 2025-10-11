@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Multiplayer Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="game" width="600" height="400"></canvas>
+
+  <!-- 🔹 Chat UI -->
+  <div id="chat">
+    <div id="messages"></div>
+    <form id="chatForm">
+      <input id="chatInput" type="text" placeholder="Type message..." autocomplete="off">
+      <button>Send</button>
+    </form>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
