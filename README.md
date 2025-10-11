@@ -119,6 +119,3 @@ This project is open-source under the MIT License
 
 .
 
-    💬 "Learn by building — this project demonstrates how real-time communication works between clients and servers using Socket.IO."
-
-
