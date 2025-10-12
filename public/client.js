@@ -19,10 +19,17 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   for (let id in players) {
     const p = players[id];
-    ctx.fillStyle = p.color;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, 10, 0, 2 * Math.PI);
+    ctx.fillStyle = id === socket.id ? '#0f0' : '#f00'; // green = you
     ctx.fill();
+
+    // ✅ Display coordinates for your own player
+    if (id === socket.id) {
+      ctx.font = '16px monospace';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(`(${Math.round(p.x)}, ${Math.round(p.y)})`, p.x + 15, p.y - 15);
+    }
   }
   requestAnimationFrame(draw);
 }
