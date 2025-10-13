@@ -1,55 +1,61 @@
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
 const socket = io();
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
 
 let players = {};
+const radius = 10;
 
-socket.on("updatePlayers", data => {
-  players = data;
+// === Movement ===
+document.addEventListener('keydown', (e) => {
+  socket.emit('move', e.key);
 });
 
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") socket.emit("move", "up");
-  if (e.key === "ArrowDown") socket.emit("move", "down");
-  if (e.key === "ArrowLeft") socket.emit("move", "left");
-  if (e.key === "ArrowRight") socket.emit("move", "right");
+socket.on('state', (serverPlayers) => {
+  players = serverPlayers;
 });
 
+// === Drawing Loop ===
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   for (let id in players) {
     const p = players[id];
+
+    // Draw player
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 10, 0, 2 * Math.PI);
-    ctx.fillStyle = id === socket.id ? '#0f0' : '#f00'; // green = you
+    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = id === socket.id ? '#0f0' : '#f00';
     ctx.fill();
 
-    // ✅ Display coordinates for your own player
+    // Show coordinates
     if (id === socket.id) {
-      ctx.font = '16px monospace';
+      ctx.font = '14px monospace';
       ctx.fillStyle = '#fff';
       ctx.fillText(`(${Math.round(p.x)}, ${Math.round(p.y)})`, p.x + 15, p.y - 15);
     }
   }
+
   requestAnimationFrame(draw);
 }
 draw();
 
-// 🔹 Chat
-const chatForm = document.getElementById("chatForm");
-const chatInput = document.getElementById("chatInput");
-const messages = document.getElementById("messages");
+// === Chat Logic ===
+const form = document.getElementById('chat-form');
+const input = document.getElementById('chat-input');
+const messages = document.getElementById('messages');
 
-chatForm.addEventListener("submit", (e) => {
+form.addEventListener('submit', (e) => {
   e.preventDefault();
-  const msg = chatInput.value.trim();
-  if (msg) socket.emit("chatMessage", msg);
-  chatInput.value = "";
+  const msg = input.value.trim();
+  if (msg !== '') {
+    socket.emit('chatMessage', msg);
+    input.value = '';
+  }
 });
 
-socket.on("chatMessage", (data) => {
-  const div = document.createElement("div");
-  div.textContent = `${data.id.slice(0, 4)}: ${data.text}`;
+socket.on('chatMessage', (msg) => {
+  const div = document.createElement('div');
+  div.textContent = msg;
   messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
+  messages.scrollTop = messages.scrollHeight; // auto-scroll to newest message
 });
