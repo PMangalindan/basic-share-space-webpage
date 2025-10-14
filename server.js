@@ -10,35 +10,44 @@ app.use(express.static('public'));
 
 let players = {};
 
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 400;
+const PLAYER_SIZE = 20;
+
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
-  // Create player
-  players[socket.id] = { x: 300, y: 200 };
+  // Random spawn within bounds
+  players[socket.id] = {
+    x: Math.floor(Math.random() * (CANVAS_WIDTH - PLAYER_SIZE)) + PLAYER_SIZE / 2,
+    y: Math.floor(Math.random() * (CANVAS_HEIGHT - PLAYER_SIZE)) + PLAYER_SIZE / 2,
+  };
 
-  // Send the current state immediately (so players appear instantly)
   io.emit('state', players);
 
-  // Handle movement
   socket.on('move', (key) => {
     const player = players[socket.id];
     if (!player) return;
 
-    const speed = 5;
+    const speed = 10;
     if (key === 'ArrowUp') player.y -= speed;
     if (key === 'ArrowDown') player.y += speed;
     if (key === 'ArrowLeft') player.x -= speed;
     if (key === 'ArrowRight') player.x += speed;
 
-    // Simple collision handling
+    // 🧱 Border limits
+    player.x = Math.max(PLAYER_SIZE / 2, Math.min(player.x, CANVAS_WIDTH - PLAYER_SIZE / 2));
+    player.y = Math.max(PLAYER_SIZE / 2, Math.min(player.y, CANVAS_HEIGHT - PLAYER_SIZE / 2));
+
+    // 💥 Collision handling
     for (let id in players) {
       if (id === socket.id) continue;
       const other = players[id];
       const dx = player.x - other.x;
       const dy = player.y - other.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const minDist = 20;
-      if (dist < minDist) {
+      const minDist = PLAYER_SIZE;
+      if (dist < minDist && dist > 0) {
         const overlap = (minDist - dist) / 2;
         const nx = dx / dist;
         const ny = dy / dist;
@@ -52,7 +61,6 @@ io.on('connection', (socket) => {
     io.emit('state', players);
   });
 
-  // 💬 Chat feature
   socket.on('chatMessage', (msg) => {
     const message = `Player ${socket.id.slice(0, 4)}: ${msg}`;
     io.emit('chatMessage', message);

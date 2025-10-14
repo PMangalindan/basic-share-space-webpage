@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 const socket = io();
 
 let players = {};
-const radius = 10;
+const size = 20; // each player square size
 
 // === Movement ===
 document.addEventListener('keydown', (e) => {
@@ -14,20 +14,39 @@ socket.on('state', (serverPlayers) => {
   players = serverPlayers;
 });
 
+// === Draw Grid ===
+function drawGrid() {
+  const gridSize = 40;
+  ctx.strokeStyle = '#333';
+  for (let x = 0; x < canvas.width; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+}
+
 // === Drawing Loop ===
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // Draw grid
+  drawGrid();
+
+  // Draw players as squares
   for (let id in players) {
     const p = players[id];
-
-    // Draw player
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
     ctx.fillStyle = id === socket.id ? '#0f0' : '#f00';
-    ctx.fill();
+    ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
 
-    // Show coordinates
+    // Show coordinates (only for self)
     if (id === socket.id) {
       ctx.font = '14px monospace';
       ctx.fillStyle = '#fff';
@@ -57,5 +76,5 @@ socket.on('chatMessage', (msg) => {
   const div = document.createElement('div');
   div.textContent = msg;
   messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight; // auto-scroll to newest message
+  messages.scrollTop = messages.scrollHeight;
 });
