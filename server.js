@@ -15,7 +15,10 @@ const CANVAS_HEIGHT = 400;
 const PLAYER_SIZE = 20;
 
 io.on('connection', (socket) => {
-  console.log(`Player connected: ${socket.id}`);
+  socket.on('newPlayer', (name) => {
+    players[socket.id] = { x: 300, y: 200, name: name || 'Player' };
+    io.emit('state', players);
+  });
 
   // Random spawn within bounds
   players[socket.id] = {
