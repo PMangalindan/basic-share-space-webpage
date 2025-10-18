@@ -1,80 +1,120 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
+// === server.js ===
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const bodyParser = require("body-parser");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static('public'));
+const PORT = 3000;
 
-let players = {};
+// === Middleware ===
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, "public")));
 
-const CANVAS_WIDTH = 600;
-const CANVAS_HEIGHT = 400;
-const PLAYER_SIZE = 20;
+const DB_FILE = path.join(__dirname, "users.json");
 
-io.on('connection', (socket) => {
-  socket.on('newPlayer', (name) => {
-    players[socket.id] = { x: 300, y: 200, name: name || 'Player' };
-    io.emit('state', players);
-  });
+// Load or initialize users
+let users = {};
+if (fs.existsSync(DB_FILE)) {
+  users = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
+} else {
+  fs.writeFileSync(DB_FILE, "{}");
+}
 
-  // Random spawn within bounds
-  players[socket.id] = {
-    x: Math.floor(Math.random() * (CANVAS_WIDTH - PLAYER_SIZE)) + PLAYER_SIZE / 2,
-    y: Math.floor(Math.random() * (CANVAS_HEIGHT - PLAYER_SIZE)) + PLAYER_SIZE / 2,
+// === Login / Register Endpoint ===
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.json({ success: false, message: "Missing username or password" });
+  }
+
+  // Existing user login
+  if (users[username]) {
+    if (users[username].password === password) {
+      return res.json({ success: true, message: "Login successful" });
+    } else {
+      return res.json({ success: false, message: "Incorrect password" });
+    }
+  }
+
+  // Register new user
+  users[username] = {
+    password,
+    lastPosition: { x: 300, y: 200 },
   };
 
-  io.emit('state', players);
+  fs.writeFileSync(DB_FILE, JSON.stringify(users, null, 2));
+  console.log(`Registered new user: ${username}`);
+  res.json({ success: true, message: "Registered successfully" });
+});
 
-  socket.on('move', (key) => {
-    const player = players[socket.id];
-    if (!player) return;
+// === Game State ===
+let players = {};
+const SPEED = 5;
 
-    const speed = 10;
-    if (key === 'ArrowUp') player.y -= speed;
-    if (key === 'ArrowDown') player.y += speed;
-    if (key === 'ArrowLeft') player.x -= speed;
-    if (key === 'ArrowRight') player.x += speed;
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
 
-    // 🧱 Border limits
-    player.x = Math.max(PLAYER_SIZE / 2, Math.min(player.x, CANVAS_WIDTH - PLAYER_SIZE / 2));
-    player.y = Math.max(PLAYER_SIZE / 2, Math.min(player.y, CANVAS_HEIGHT - PLAYER_SIZE / 2));
-
-    // 💥 Collision handling
-    for (let id in players) {
-      if (id === socket.id) continue;
-      const other = players[id];
-      const dx = player.x - other.x;
-      const dy = player.y - other.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const minDist = PLAYER_SIZE;
-      if (dist < minDist && dist > 0) {
-        const overlap = (minDist - dist) / 2;
-        const nx = dx / dist;
-        const ny = dy / dist;
-        player.x += nx * overlap;
-        player.y += ny * overlap;
-        other.x -= nx * overlap;
-        other.y -= ny * overlap;
-      }
+  // Player joins
+  socket.on("newPlayer", (name) => {
+    // If user has saved position
+    let startX = 300;
+    let startY = 200;
+    if (users[name]?.lastPosition) {
+      startX = users[name].lastPosition.x;
+      startY = users[name].lastPosition.y;
     }
 
-    io.emit('state', players);
+    players[socket.id] = { x: startX, y: startY, name };
+    io.emit("state", players);
   });
 
-  socket.on('chatMessage', (msg) => {
-    const message = `Player ${socket.id.slice(0, 4)}: ${msg}`;
-    io.emit('chatMessage', message);
+  // Movement handling
+  socket.on("move", (key) => {
+    const p = players[socket.id];
+    if (!p) return;
+
+    switch (key) {
+      case "ArrowUp":
+        p.y = Math.max(p.y - SPEED, 10);
+        break;
+      case "ArrowDown":
+        p.y = Math.min(p.y + SPEED, 390);
+        break;
+      case "ArrowLeft":
+        p.x = Math.max(p.x - SPEED, 10);
+        break;
+      case "ArrowRight":
+        p.x = Math.min(p.x + SPEED, 590);
+        break;
+    }
+
+    io.emit("state", players);
   });
 
-  socket.on('disconnect', () => {
+  // Chat messages
+  socket.on("chatMessage", (msg) => {
+    io.emit("chatMessage", msg);
+  });
+
+  // Save last position on disconnect
+  socket.on("disconnect", () => {
+    const player = players[socket.id];
+    if (player && users[player.name]) {
+      users[player.name].lastPosition = { x: player.x, y: player.y };
+      fs.writeFileSync(DB_FILE, JSON.stringify(users, null, 2));
+    }
+
     delete players[socket.id];
-    io.emit('state', players);
+    io.emit("state", players);
+    console.log("A user disconnected:", socket.id);
   });
 });
 
-server.listen(3000, '0.0.0.0', () => {
-  console.log('✅ Server running on http://0.0.0.0:3000');
-});
+// === Start Server ===
+server.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));

@@ -1,0 +1,16 @@
+{
+  "pol": {
+    "password": "asdf",
+    "lastPosition": {
+      "x": 300,
+      "y": 200
+    }
+  },
+  "angel": {
+    "password": "asdf",
+    "lastPosition": {
+      "x": 300,
+      "y": 200
+    }
+  }
+}

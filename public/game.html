@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multiplayer Game + Chat</title>
+
+  <script>
+    // Redirect to login page if not logged in
+    const username = sessionStorage.getItem("username");
+if (!username) {
+  window.location.href = "/login.html";
+}
+
+  </script>
+
+
+  <link rel="stylesheet" href="style.css">
+
+
+
+
+
+</head>
+<body>
+  <!-- <div id="game-container">
+    <canvas id="game" width="600" height="400"></canvas>
+  </div> -->
+
+  <div style="display: flex; gap: 20px; justify-content: center; align-items: flex-start;">
+    <canvas id="reserve" width="200" height="400" style="border: 2px solid #0f0;"></canvas>
+    <canvas id="game" width="600" height="400"></canvas>
+    <canvas id="info" width="200" height="400" style="border: 2px solid #0f0;"></canvas>
+  </div>
+
+  <div id="chat-container">
+    <div id="messages"></div>
+    <form id="chat-form">
+      <input id="chat-input" autocomplete="off" placeholder="Type your message..." />
+      <button>Send</button>
+    </form>
+  </div>
+
+  
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>

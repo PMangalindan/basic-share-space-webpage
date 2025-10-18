@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login / Register</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .login-container {
+      background: #222;
+      padding: 30px;
+      border: 2px solid #0f0;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+      box-shadow: 0 0 10px #0f0;
+    }
+
+    h2 {
+      color: #0f0;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+    }
+
+    input[type="text"], input[type="password"] {
+      background: #333;
+      color: #fff;
+    }
+
+    button {
+      background: #0f0;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #4f4;
+    }
+
+    p {
+      margin-top: 15px;
+      font-size: 0.9em;
+      color: #aaa;
+    }
+
+    a {
+      color: #0f0;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Login / Register</h2>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Enter your name" required><br>
+      <input type="password" id="password" placeholder="Enter password" required><br>
+      <button type="submit">Enter Game</button>
+    </form>
+    <p>New user? Just type your name and a new password — it’ll create your account automatically.</p>
+  </div>
+
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Save name and go to game page
+        sessionStorage.setItem("username", username);
+        window.location.href = "/game.html";
+      } else {
+        alert(data.message);
+      }
+    });
+  </script>
+</body>
+</html>
