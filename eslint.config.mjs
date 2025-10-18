@@ -3,22 +3,22 @@ import globals from "globals";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
-  // 🌐 For client-side JS (browser)
+  // 🌐 Client-side (browser)
   {
     files: ["public/**/*.{js,mjs}"],
     languageOptions: {
       globals: globals.browser,
     },
-    extends: ["js/recommended"],
+    ...js.configs.recommended, // ✅ use recommended rules
   },
 
-  // 🖥️ For server-side JS
+  // 🖥️ Server-side (Node)
   {
     files: ["server.js", "app.js", "routes/**/*.js"],
     languageOptions: {
-      globals: globals.node, // 👈 enables __dirname, require, etc.
+      globals: globals.node,
       sourceType: "commonjs",
     },
-    extends: ["js/recommended"],
+    ...js.configs.recommended, // ✅ use same recommended rules
   },
 ]);
