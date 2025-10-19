@@ -11,11 +11,18 @@ let players = {};
 const size = 20;
 let selectedPlayerId = null; // who was clicked
 
-// === Ask for Player Name ===
-const playerName = prompt("Enter your name:") || "Player";
+// // === Ask for Player Name ===
+// const playerName = prompt("Enter your name:") || "Player";
+
+// // Send name to server when connecting
+// socket.emit("newPlayer", playerName);
+
+// === Use username from login session ===
+const playerName = sessionStorage.getItem("username") || "Player";
 
 // Send name to server when connecting
 socket.emit("newPlayer", playerName);
+
 
 // === Movement ===
 document.addEventListener('keydown', (e) => {
@@ -145,3 +152,28 @@ socket.on('chatMessage', (msg) => {
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
 });
+
+// === Save Button ===
+const saveBtn = document.getElementById('saveBtn');
+
+saveBtn.addEventListener('click', () => {
+  const me = players[socket.id];
+  if (!me) return alert("You must move first!");
+
+  fetch('/save-position', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: me.name,
+      x: me.x,
+      y: me.y
+    })
+  })
+  .then(res => res.json())
+  .then(data => alert(data.message))
+  .catch(err => {
+    console.error('Error saving position:', err);
+    alert('Failed to save position.');
+  });
+});
+

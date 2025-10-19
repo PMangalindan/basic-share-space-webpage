@@ -26,6 +26,11 @@ if (fs.existsSync(DB_FILE)) {
   fs.writeFileSync(DB_FILE, "{}");
 }
 
+
+
+
+
+
 // === Login / Register Endpoint ===
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
@@ -115,6 +120,42 @@ io.on("connection", (socket) => {
     console.log("A user disconnected:", socket.id);
   });
 });
+
+
+
+
+
+// Make sure this line exists near the top:
+app.use(express.json());
+
+// === Save Player Position ===
+app.post('/save-position', (req, res) => {
+  const { name, x, y } = req.body;
+
+  if (!name || x === undefined || y === undefined) {
+    return res.status(400).json({ message: 'Invalid data' });
+  }
+
+  // Update user position in users.json
+  if (users[name]) {
+    users[name].lastPosition = { x, y };
+  } else {
+    users[name] = { password: '', lastPosition: { x, y } }; // fallback
+  }
+
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(users, null, 2));
+    console.log(`✅ Saved ${name} at (${x}, ${y})`);
+    res.json({ message: '✅ Position saved successfully!' });
+  } catch (err) {
+    console.error('❌ Failed to save position:', err);
+    res.status(500).json({ message: 'Failed to save position.' });
+  }
+});
+
+
+
+
 
 // === Start Server ===
 server.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
